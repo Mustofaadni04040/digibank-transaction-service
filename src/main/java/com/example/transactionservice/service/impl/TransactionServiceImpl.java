@@ -40,6 +40,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         Transaction deposit = Transaction.builder()
                 .reference("DEP" + UUID.randomUUID().toString().substring(0,8))
+                .fromAccountNumber(request.getFromAccountNumber())
                 .fromBankCode("DIGI")
                 .currency(Currency.USD)
                 .toAccountNumber(request.getToAccountNumber())
