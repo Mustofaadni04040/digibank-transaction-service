@@ -17,6 +17,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -72,7 +74,83 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public ApiResponse<TransactionDTO> transfer(TransactionRequest request) {
-        return null;
+        if (request.getFromAccountNumber() == null || request.getFromAccountNumber().isEmpty()) {
+            throw new BadRequestException("From account is needed");
+        }
+
+        AccountDTO sourceAccount = fetchAndValidateAccount(request.getFromAccountNumber());
+
+        String loggedInUserEmail = null;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null && authentication.isAuthenticated()) {
+            loggedInUserEmail = authentication.getName();
+        }
+
+        log.info("Auth email is {}", loggedInUserEmail);
+        log.info("Account email is {}", sourceAccount.getOwnerEmail()
+        );
+
+        if (!sourceAccount.getOwnerEmail().equals(loggedInUserEmail)) {
+            throw new BadRequestException("Access denied: you are not authorized to perform a transfer to this account");
+        }
+
+        if (sourceAccount.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new BadRequestException("Transaction failed: your account is inactive, please contact customer support");
+        }
+
+        if (sourceAccount.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new BadRequestException("Insufficient account balance");
+        }
+
+        if (request.getFromAccountNumber().equals(request.getToAccountNumber())) {
+            throw new BadRequestException("You cannot transfer to the same account");
+        }
+
+        fetchAndValidateAccount(request.getToAccountNumber());
+
+        Transaction transferTxn = Transaction.builder()
+                .reference("TRF" + UUID.randomUUID().toString().substring(0,8))
+                .fromAccountNumber(request.getFromAccountNumber())
+                .fromBankCode("DIGI")
+                .currency(Currency.USD)
+                .toAccountNumber(request.getToAccountNumber())
+                .toBankCode("DIGI")
+                .amount(request.getAmount())
+                .channel(Channel.API)
+                .description(request.getDescription())
+                .transactionType(TransactionType.TRANSFER)
+                .transactionStatus(TransactionStatus.SUCCESS)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        Transaction savedTransaction = transactionRepository.save(transferTxn);
+
+        // notif to sender
+        transactionEventPublisher.sendBalanceUpdate(BalanceUpdateEvent.builder()
+                        .accountNumber(request.getFromAccountNumber())
+                        .amount(request.getAmount())
+                        .currency(Currency.USD)
+                        .transactionDirection(TransactionDirection.DEBIT)
+                        .transactionStatus(TransactionStatus.SUCCESS)
+                        .reference(savedTransaction.getReference())
+                .build());
+
+        // notif to receiver
+        transactionEventPublisher.sendBalanceUpdate(BalanceUpdateEvent.builder()
+                .accountNumber(request.getToAccountNumber())
+                .amount(request.getAmount())
+                .currency(Currency.USD)
+                .transactionDirection(TransactionDirection.CREDIT)
+                .transactionStatus(TransactionStatus.SUCCESS)
+                .reference(savedTransaction.getReference())
+                .build());
+
+        return new ApiResponse<>(
+                201,
+                "Trasnfer successful",
+                modelMapper.map(savedTransaction, TransactionDTO.class)
+        );
     }
 
     @Override
