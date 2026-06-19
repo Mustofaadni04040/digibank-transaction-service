@@ -205,22 +205,58 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public ApiResponse<TransactionDTO> getTransactionByReference(String reference) {
-        return null;
+
+        Transaction txn = transactionRepository.findByReference(reference).orElseThrow(() -> new NotFoundException("Transaction not found"));
+
+        TransactionDTO dto = modelMapper.map(txn, TransactionDTO.class);
+
+        return new ApiResponse<>(
+                200,
+                "Transaction retrieved",
+                dto
+        );
     }
 
     @Override
     public ApiResponse<List<TransactionDTO>> getAllTransactionHistoryFromAnAccountNumber(String accountNumber) {
-        return null;
+
+        List<Transaction> transactionList = transactionRepository.findAllByAccountNumber(accountNumber);
+
+        List<TransactionDTO> transactionDTOS = transactionList.stream().map(t -> modelMapper.map(t, TransactionDTO.class)).toList();
+
+        return new ApiResponse<>(
+                200,
+                "Transaction history retrieved",
+                transactionDTOS
+        );
     }
 
     @Override
     public ApiResponse<List<TransactionDTO>> getTransactionHistory(String accountNumber, LocalDateTime start, LocalDateTime end) {
-        return null;
+
+        List<Transaction> history = transactionRepository.findAllAccountNumberAndDateRange(accountNumber, start, end);
+
+        List<TransactionDTO> transactionDTOS = history.stream().map(t -> modelMapper.map(t, TransactionDTO.class)).toList();
+
+        return new ApiResponse<>(
+                200,
+                "Transaction history retrieved",
+                transactionDTOS
+        );
     }
 
     @Override
-    public ApiResponse<List<TransactionDTO>> getMyTransactionHistoryByDirection(TransactionRequest request) {
-        return null;
+    public ApiResponse<List<TransactionDTO>> getMyTransactionHistoryByDirection(String accountNumber, TransactionDirection direction) {
+
+        List<Transaction> transactions = direction.equals(TransactionDirection.DEBIT) ? transactionRepository.findByFromAccountNumber(accountNumber) : transactionRepository.findByToAccountNumber(accountNumber);
+
+        List<TransactionDTO> transactionDTOS = transactions.stream().map(t -> modelMapper.map(t, TransactionDTO.class)).toList();
+
+        return new ApiResponse<>(
+                200,
+                "Transaction history retrieved",
+                transactionDTOS
+        );
     }
 
 

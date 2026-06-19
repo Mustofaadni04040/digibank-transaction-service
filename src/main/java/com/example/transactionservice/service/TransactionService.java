@@ -3,6 +3,7 @@ package com.example.transactionservice.service;
 import com.example.transactionservice.dto.ApiResponse;
 import com.example.transactionservice.dto.TransactionDTO;
 import com.example.transactionservice.dto.TransactionRequest;
+import com.example.transactionservice.enums.TransactionDirection;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,5 +16,5 @@ public interface TransactionService {
     ApiResponse<TransactionDTO> getTransactionByReference(String reference);
     ApiResponse<List<TransactionDTO>> getAllTransactionHistoryFromAnAccountNumber(String accountNumber);
     ApiResponse<List<TransactionDTO>> getTransactionHistory(String accountNumber, LocalDateTime start, LocalDateTime end);
-    ApiResponse<List<TransactionDTO>> getMyTransactionHistoryByDirection(TransactionRequest request);
+    ApiResponse<List<TransactionDTO>> getMyTransactionHistoryByDirection(String accountNumber, TransactionDirection direction);
 }
