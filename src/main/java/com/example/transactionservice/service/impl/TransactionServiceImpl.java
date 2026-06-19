@@ -34,6 +34,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final AccountFeignClient accountFeignClient;
     private final ModelMapper modelMapper;
     private final TransactionEventPublisher transactionEventPublisher;
+    public static final String VAULT_ACCOUNT = "VAULT";
 
     @Override
     @Transactional
@@ -131,6 +132,7 @@ public class TransactionServiceImpl implements TransactionService {
                         .accountNumber(request.getFromAccountNumber())
                         .amount(request.getAmount())
                         .currency(Currency.USD)
+                        .description(request.getDescription())
                         .transactionDirection(TransactionDirection.DEBIT)
                         .transactionStatus(TransactionStatus.SUCCESS)
                         .reference(savedTransaction.getReference())
@@ -141,6 +143,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .accountNumber(request.getToAccountNumber())
                 .amount(request.getAmount())
                 .currency(Currency.USD)
+                .description(request.getDescription())
                 .transactionDirection(TransactionDirection.CREDIT)
                 .transactionStatus(TransactionStatus.SUCCESS)
                 .reference(savedTransaction.getReference())
@@ -171,8 +174,8 @@ public class TransactionServiceImpl implements TransactionService {
                 .fromAccountNumber(request.getFromAccountNumber())
                 .fromBankCode("DIGI")
                 .currency(Currency.USD)
-                .toAccountNumber("VULT")
-                .toBankCode("VULT")
+                .toAccountNumber(VAULT_ACCOUNT)
+                .toBankCode(VAULT_ACCOUNT)
                 .amount(request.getAmount())
                 .channel(Channel.API)
                 .description(request.getDescription())
@@ -187,6 +190,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .accountNumber(request.getFromAccountNumber())
                 .amount(request.getAmount())
                 .currency(Currency.USD)
+                .description(request.getDescription())
                 .transactionDirection(TransactionDirection.DEBIT)
                 .transactionStatus(TransactionStatus.SUCCESS)
                 .reference(savedWithdrawTxn.getReference())
