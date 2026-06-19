@@ -151,7 +151,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         return new ApiResponse<>(
                 201,
-                "Trasnfer successful",
+                "Transfer successful",
                 modelMapper.map(savedTransaction, TransactionDTO.class)
         );
     }
@@ -181,6 +181,7 @@ public class TransactionServiceImpl implements TransactionService {
                 .description(request.getDescription())
                 .transactionType(TransactionType.TRANSFER)
                 .transactionStatus(TransactionStatus.SUCCESS)
+                .transactionDirection(TransactionDirection.DEBIT)
                 .createdAt(LocalDateTime.now())
                 .build();
 
