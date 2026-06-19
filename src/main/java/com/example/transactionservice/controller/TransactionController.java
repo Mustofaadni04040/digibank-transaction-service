@@ -24,4 +24,9 @@ public class TransactionController {
     public ResponseEntity<ApiResponse<TransactionDTO>> transfer(@Valid @RequestBody TransactionRequest request) {
         return ResponseEntity.ok(transactionService.transfer(request));
     }
+
+    @PostMapping("/withdraw")
+    public ResponseEntity<ApiResponse<TransactionDTO>> withdraw(@Valid @RequestBody TransactionRequest request) {
+        return ResponseEntity.ok(transactionService.withdraw(request));
+    }
 }

@@ -155,7 +155,48 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public ApiResponse<TransactionDTO> withdraw(TransactionRequest request) {
-        return null;
+
+        AccountDTO account = fetchAndValidateAccount(request.getFromAccountNumber());
+
+        if (account.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new BadRequestException("Inactive account");
+        }
+
+        if (account.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new BadRequestException("Insufficient balance");
+        }
+
+        Transaction withdrawalTxn = Transaction.builder()
+                .reference("WDR" + UUID.randomUUID().toString().substring(0,8))
+                .fromAccountNumber(request.getFromAccountNumber())
+                .fromBankCode("DIGI")
+                .currency(Currency.USD)
+                .toAccountNumber("VULT")
+                .toBankCode("VULT")
+                .amount(request.getAmount())
+                .channel(Channel.API)
+                .description(request.getDescription())
+                .transactionType(TransactionType.TRANSFER)
+                .transactionStatus(TransactionStatus.SUCCESS)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        Transaction savedWithdrawTxn = transactionRepository.save(withdrawalTxn);
+
+        transactionEventPublisher.sendBalanceUpdate(BalanceUpdateEvent.builder()
+                .accountNumber(request.getFromAccountNumber())
+                .amount(request.getAmount())
+                .currency(Currency.USD)
+                .transactionDirection(TransactionDirection.DEBIT)
+                .transactionStatus(TransactionStatus.SUCCESS)
+                .reference(savedWithdrawTxn.getReference())
+                .build());
+
+        return new ApiResponse<>(
+                201,
+                "Withdraw successful",
+                modelMapper.map(savedWithdrawTxn, TransactionDTO.class)
+        );
     }
 
     @Override
