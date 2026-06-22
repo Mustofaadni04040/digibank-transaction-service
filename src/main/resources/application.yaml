@@ -2,7 +2,7 @@ spring:
   application:
     name: transaction-service
   datasource:
-    url: ${DB_URL}
+    url: ${DB_URL_TRANSACTION}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   jpa:
@@ -22,6 +22,8 @@ spring:
           json:
             add:
               type: true
+  config:
+    import: optional:file:.env[.properties]
 
 eureka:
   client:
